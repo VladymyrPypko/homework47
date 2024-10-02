@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import { cartRoutes, productRoutes, userRoutes } from './routes/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
@@ -9,8 +10,10 @@ app.use(bodyParser.json());
 dotenv.config();
 
 app.use('/api', userRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
+app.use('/api', productRoutes);
+app.use('/api', cartRoutes);
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

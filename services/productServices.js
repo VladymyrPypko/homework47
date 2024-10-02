@@ -1,24 +1,87 @@
-import { products } from '../storage.js';
+import fs from 'fs';
+import path from 'path';
+import { randomUUID } from 'crypto';
+import { getProductsFromFile, importProductsFromCSV } from './importServices.js';
+import { fileUploadLogger } from '../utils/eventLogger.js';
 
-export const getAllProducts = async (req, res) => {
+const productsFilePath = path.join(
+  process.cwd(),
+  'storage',
+  'products.store.json'
+);
+
+export const createProduct = async (req, res, next) => {
   try {
-    res.json(products);
+    const { name, description, category, price } = req.body;
+    if (!name || !description || !category || typeof price !== 'number') {
+      return res.status(400).json({
+        message: 'All fields are required, and price must be a number!',
+      });
+    }
+
+    const newProduct = {
+      id: randomUUID(),
+      name,
+      description,
+      category,
+      price,
+    };
+
+    const products = await getProductsFromFile();
+    products.push(newProduct);
+
+    await fs.promises.writeFile(
+      productsFilePath,
+      JSON.stringify(products, null, 2)
+    );
+
+    res.status(201).json(newProduct);
   } catch (error) {
-    res.status(500).json({ message: `Can't' get the products: `, error });
+    next(error);
   }
 };
 
-export const getProductById = async (req, res) => {
+export const getAllProducts = async (req, res, next) => {
   try {
-    const product = products.find(
-      (product) => product.id === parseInt(req.params.productId)
-    );
-    if (!product) {
-      return res.status(500).json({ message: 'Product not found' });
-    }
-
-    res.json(product);
+    const products = await getProductsFromFile();
+    res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({ message: `Can't' get the product: `, error });
+    next(error);
+  }
+};
+
+export const getProductById = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const products = await getProductsFromFile();
+    const product = products.find((p) => p.id === productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.status(200).json(product);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const importProducts = async (req, res, next) => {
+  try {
+    fileUploadLogger.emit('fileUploadStart', 'File upload has started');
+
+    const csvFilePath = path.join(process.cwd(), 'uploads', req.file.filename);
+    const importedProducts = await importProductsFromCSV(csvFilePath);
+
+    fileUploadLogger.emit('fileUploadEnd', 'File has been uploaded');
+
+    res.status(201).json({
+      message: 'Products imported successfully',
+      importedProducts,
+    });
+  } catch (error) {
+    fileUploadLogger.emit(
+      'fileUploadFailed',
+      `Error occurred: ${error.message}`
+    );
+    next(error);
   }
 };

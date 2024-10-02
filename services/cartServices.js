@@ -1,21 +1,25 @@
 import { randomUUID } from 'crypto';
-import { carts, products } from '../storage.js';
+import { carts, orders } from '../storage/storage.js';
 
-export const addToCart = async (req, res) => {
+export const getCart = async (req, res, next) => {
   try {
-    const userId = req.headers['x-user-id'];
-    const productId = req.params.productId;
+    const userId = req.userId;
+    const userCart = carts.find((cart) => cart.userId === userId);
 
-    if (!userId) {
-      return res.status(401).json({ message: 'Access denied: Unauthorized' });
+    if (!userCart) {
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
-    const product = products.find(
-      (product) => product.id === parseInt(productId)
-    );
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
+    res.status(200).json(userCart);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addToCart = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const { productId } = req.params;
 
     let cart = carts.find((cart) => cart.userId === userId);
     if (!cart) {
@@ -27,24 +31,17 @@ export const addToCart = async (req, res) => {
       carts.push(cart);
     }
 
-    cart.products.push(product);
-    res.json(cart);
+    cart.products.push({ productId, quantity: 1 });
+    res.status(200).json(cart);
   } catch (error) {
-    res.status(500).json({
-      message: `Can't add a product to the cart`,
-      error,
-    });
+    next(error);
   }
 };
 
-export const deleteFromCart = async (req, res) => {
+export const deleteFromCart = async (req, res, next) => {
   try {
-    const userId = req.headers['x-user-id'];
-    const productId = req.params.productId;
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Access denied: Unauthorized' });
-    }
+    const userId = req.userId;
+    const { productId } = req.params;
 
     const cart = carts.find((cart) => cart.userId === userId);
     if (!cart) {
@@ -52,33 +49,29 @@ export const deleteFromCart = async (req, res) => {
     }
 
     cart.products = cart.products.filter(
-      (product) => product.id !== parseInt(productId)
+      (product) => product.productId !== productId
     );
-    res.json(cart);
+    if (!cart.products.length) {
+      carts.splice(carts.indexOf(cart), 1);
+    }
+    res
+      .status(200)
+      .json({ message: 'Product has been deleted from cart', cart });
   } catch (error) {
-    res.status(500).json({
-      message: `Can't delete a product from the cart`,
-      error,
-    });
+    next(error);
   }
 };
 
-export const checkoutCart = async (req, res) => {
+export const checkoutCart = async (req, res, next) => {
   try {
-    const userId = req.headers['x-user-id'];
-    if (!userId) {
-      return res.status(401).json({ message: 'Access denied: Unauthorized' });
-    }
+    const userId = req.userId;
+    const { totalPrice } = req.body;
 
     const cart = carts.find((cart) => cart.userId === userId);
-    if (!cart || !cart.products.length) {
-      return res.status(400).json({ message: 'Cart is empty' });
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
-    const totalPrice = cart.products.reduce(
-      (acc, product) => acc + product.price,
-      0
-    );
     const order = {
       id: randomUUID(),
       userId,
@@ -86,8 +79,21 @@ export const checkoutCart = async (req, res) => {
       totalPrice,
     };
 
-    res.json(order);
+    orders.push(order);
+    carts.splice(carts.indexOf(cart), 1);
+
+    res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {
-    res.status(500).json({ message: 'Error: ', error });
+    next(error);
+  }
+};
+
+export const getOrders = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const userOrders = orders.filter((order) => order.userId === userId);
+    res.status(200).json(userOrders);
+  } catch (error) {
+    next(error);
   }
 };
