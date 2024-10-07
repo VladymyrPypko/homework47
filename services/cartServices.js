@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { carts, orders } from '../storage/storage.js';
+import { NotFound, BadRequest } from '../middleware/errorHandler.js';
 
 export const getCart = async (req, res, next) => {
   try {
@@ -7,7 +8,7 @@ export const getCart = async (req, res, next) => {
     const userCart = carts.find((cart) => cart.userId === userId);
 
     if (!userCart) {
-      return res.status(404).json({ message: 'Cart not found' });
+      return next(new NotFound('Cart not found'));
     }
 
     res.status(200).json(userCart);
@@ -45,7 +46,7 @@ export const deleteFromCart = async (req, res, next) => {
 
     const cart = carts.find((cart) => cart.userId === userId);
     if (!cart) {
-      return res.status(404).json({ message: 'Cart not found' });
+      return next(new NotFound('Cart not found'));
     }
 
     cart.products = cart.products.filter(
@@ -67,9 +68,15 @@ export const checkoutCart = async (req, res, next) => {
     const userId = req.userId;
     const { totalPrice } = req.body;
 
+    if (!totalPrice || typeof totalPrice !== 'number') {
+      return next(
+        new BadRequest('Total price is required and must be a number')
+      );
+    }
+
     const cart = carts.find((cart) => cart.userId === userId);
     if (!cart) {
-      return res.status(404).json({ message: 'Cart not found' });
+      return next(new NotFound('Cart not found'));
     }
 
     const order = {

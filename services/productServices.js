@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { getProductsFromFile, importProductsFromCSV } from './importServices.js';
+import { getProductsFromFile, importProductsFromCSV, } from './importServices.js';
 import { fileUploadLogger } from '../utils/eventLogger.js';
+import { BadRequest, NotFound, InternalServerError, } from '../middleware/errorHandler.js';
 
 const productsFilePath = path.join(
   process.cwd(),
@@ -13,10 +14,11 @@ const productsFilePath = path.join(
 export const createProduct = async (req, res, next) => {
   try {
     const { name, description, category, price } = req.body;
+
     if (!name || !description || !category || typeof price !== 'number') {
-      return res.status(400).json({
-        message: 'All fields are required, and price must be a number!',
-      });
+      throw new BadRequest(
+        'All fields are required, and price must be a number!'
+      );
     }
 
     const newProduct = {
@@ -46,7 +48,7 @@ export const getAllProducts = async (req, res, next) => {
     const products = await getProductsFromFile();
     res.status(200).json(products);
   } catch (error) {
-    next(error);
+    next(new InternalServerError('Failed to retrieve products'));
   }
 };
 
@@ -55,9 +57,11 @@ export const getProductById = async (req, res, next) => {
     const { productId } = req.params;
     const products = await getProductsFromFile();
     const product = products.find((p) => p.id === productId);
+
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      throw new NotFound('Product not found');
     }
+
     res.status(200).json(product);
   } catch (error) {
     next(error);
@@ -82,6 +86,6 @@ export const importProducts = async (req, res, next) => {
       'fileUploadFailed',
       `Error occurred: ${error.message}`
     );
-    next(error);
+    next(new InternalServerError('Failed to import products'));
   }
 };

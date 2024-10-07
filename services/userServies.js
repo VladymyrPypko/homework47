@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { users } from '../storage/storage.js';
+import { BadRequest } from '../middleware/errorHandler.js';
 
 export const registerUser = (req, res, next) => {
   try {
@@ -7,7 +8,7 @@ export const registerUser = (req, res, next) => {
 
     const existingUser = users.find((user) => user.email === email);
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      throw new BadRequest('User already exists');
     }
 
     const newUser = {
