@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
+import { uploadMiddleware } from '../middleware/uploadMiddleware';
 import {
   createProduct,
   getAllProducts,
   getProductById,
   importProducts,
-} from '../services/index.js';
-import { uploadMiddleware } from '../middleware/uploadMiddleware.js';
+} from '../controllers/product.controllers';
 
 const router = Router();
 

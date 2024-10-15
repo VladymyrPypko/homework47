@@ -1,5 +1,9 @@
+import { Request, Response, NextFunction } from 'express';
+
 export class ApiError extends Error {
-  constructor(statusCode, message) {
+  public statusCode: number;
+
+  constructor(statusCode: number, message: string) {
     super(message);
     this.statusCode = statusCode;
   }
@@ -41,9 +45,10 @@ export class InternalServerError extends ApiError {
   }
 }
 
-export const errorHandler = (err, req, res, next) => {
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({ message: err.message });
-  }
-  return res.status(500).json({ message: 'Internal server error' });
+export const errorHandler = (error: ApiError, req: Request, res: Response) => {
+  const status = error.statusCode || 500;
+  const message = error.message || 'Internal Server Error';
+  res.status(status).send({
+    message,
+  });
 };
