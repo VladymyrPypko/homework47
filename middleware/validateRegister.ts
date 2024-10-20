@@ -1,7 +1,12 @@
+import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { BadRequest } from './errorHandler.js';
+import { BadRequest } from './errorHandler';
 
-export const validateRegister = (req, res, next) => {
+export const validateRegister = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const schema = Joi.object({
     email: Joi.string()
       .email({ tlds: { allow: false } })
