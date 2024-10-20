@@ -3,7 +3,7 @@ import { carts, orders, } from '../storage/storage';
 import { NotFound, BadRequest } from '../middleware/errorHandler';
 import { Cart, Order } from '../models';
 
-export const getUserCart = ({ userId }: { userId?: string }) => {
+export const getUserCart = ({ userId }: { userId?: string }): Cart => {
   if (!userId) {
     throw new NotFound('User ID is required');
   }
@@ -17,7 +17,7 @@ export const getUserCart = ({ userId }: { userId?: string }) => {
   return userCart;
 };
 
-export const addToUserCart = (userId: string, productId: string) => {
+export const addToUserCart = (userId: string, productId: string): Cart => {
   let cart = carts.find((cart: Cart) => cart.userId === userId);
 
   if (!cart) {
@@ -42,7 +42,7 @@ export const addToUserCart = (userId: string, productId: string) => {
   return cart;
 };
 
-export const deleteFromUserCart = (userId: string, productId: string) => {
+export const deleteFromUserCart = (userId: string, productId: string): Cart => {
   const cart = carts.find((cart: Cart) => cart.userId === userId);
   if (!cart) {
     throw new NotFound('Cart not found');
@@ -59,13 +59,13 @@ export const deleteFromUserCart = (userId: string, productId: string) => {
   return cart;
 };
 
-export const validateTotalPrice = (totalPrice: any) => {
+export const validateTotalPrice = (totalPrice: any): void => {
   if (totalPrice === undefined || typeof totalPrice !== 'number') {
     throw new BadRequest('Total price is required and must be a number');
   }
 };
 
-export const checkoutUserCart = (userId: string, totalPrice: number) => {
+export const checkoutUserCart = (userId: string, totalPrice: number): Order => {
   const cart = carts.find((cart: Cart) => cart.userId === userId);
 
   if (!cart) {

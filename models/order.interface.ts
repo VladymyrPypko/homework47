@@ -1,11 +1,8 @@
-interface ProductInOrder {
-  productId: string;
-  quantity: number;
-}
+import { ShortProduct } from "./product.interface";
 
 export interface Order {
   id: string;
   userId: string;
-  products: ProductInOrder[];
+  products: ShortProduct[];
   totalPrice: number;
 }

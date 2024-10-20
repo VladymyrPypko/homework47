@@ -1,10 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response, NextFunction } from 'express';
-import { createNewProduct, getProductByIdService, getProductsFromFile } from '../services';
-import { importProductsFromCSV } from './import.controllers';
-import { fileUploadLogger } from '../utils/eventLogger';
-import { BadRequest, InternalServerError } from '../middleware/errorHandler';
+import { createNewProduct, getProductByIdService, getProductsFromFile, importProductsService } from '../services';
+import { InternalServerError } from '../middleware/errorHandler';
 
 export const createProduct = async (
   req: Request,
@@ -47,36 +43,19 @@ export const getProductById = async (
   }
 };
 
-// выдает ошибку типизации при попытке передать req.file
 export const importProducts = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    fileUploadLogger.emit('fileUploadStart', 'File upload has started');
-
-    if (!req.file) {
-      throw new BadRequest('There is no file to import');
-    }
-
-    const csvFilePath = path.join(__dirname, '../uploads', req.file.filename);
-
-    if (!fs.existsSync(csvFilePath)) {
-      throw new BadRequest(`File not found: ${csvFilePath}`);
-    }
-
-    const importedProducts = await importProductsFromCSV(csvFilePath);
-
-    fileUploadLogger.emit('fileUploadEnd', 'File has been uploaded');
+    const importedProducts = await importProductsService(req.file as Express.Multer.File);
 
     res.status(201).json({
       message: 'Products imported successfully',
       importedProducts,
     });
   } catch (error) {
-    fileUploadLogger.emit('fileUploadFailed', `Error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
-
-    next(new InternalServerError(`Failed to import products: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    next(error);
   }
 };

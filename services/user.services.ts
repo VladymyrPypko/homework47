@@ -10,7 +10,7 @@ export const registerNewUser = ({
   email: string;
   name: string;
   password: string;
-}) => {
+}): void => {
   const existingUser = users.find((user) => user.email === email);
   if (existingUser) {
     throw new BadRequest('User already exists');

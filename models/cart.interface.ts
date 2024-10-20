@@ -1,10 +1,8 @@
-interface ProductInCart {
-  productId: string;
-  quantity: number;
-}
+import { ShortProduct } from "./product.interface";
+
 
 export interface Cart {
   id: string;
   userId: string;
-  products: ProductInCart[];
+  products: ShortProduct[];
 }
