@@ -1,3 +1,5 @@
 /node_modules
 storage/products.store.json
 /dist
+.env.development
+.env.production

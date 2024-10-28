@@ -5,15 +5,25 @@ import {
   getAllProducts,
   getProductById,
   importProducts,
-} from '../controllers/product.controllers';
+} from '../controllers';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { checkUserPermissions } from '../middleware/permissionsMiddleware';
+import { APP_ROLES } from '../models';
 
 const router = Router();
 
-router.post('/product', createProduct);
+router.post(
+  '/product',
+  authMiddleware,
+  checkUserPermissions([APP_ROLES.Admin]),
+  createProduct
+);
 router.get('/products', getAllProducts);
 router.get('/products/:productId', getProductById);
 router.post(
   '/products/import',
+  authMiddleware,
+  checkUserPermissions([APP_ROLES.Admin]),
   uploadMiddleware.single('file'),
   importProducts
 );
